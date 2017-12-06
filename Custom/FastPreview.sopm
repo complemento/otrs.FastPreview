@@ -1,16 +1,16 @@
 <?xml version="1.0" encoding="utf-8" ?>
 <otrs_package version="1.1">
     <Name>FastPreview</Name>
-    <Version>5.0.13</Version>
+    <Version>6.0.0</Version>
     <Vendor>Complemento [Free]</Vendor>
     <URL>http://www.complemento.net.br/otrs</URL>
     <License>GNU GENERAL PUBLIC LICENSE Version 2, June 1991</License>
     <Description Lang="en">Add and remove Watchers from the ticket and also send quick notes to them!</Description>
-    <Framework>5.x.x</Framework>
+    <Framework>6.0.x</Framework>
     <IntroInstall Lang="en" Title="Tutorial" Type="pre">Don't use this package without testing exautivily on a devel server.</IntroInstall>
     <PackageRequired Version="1.11.4">JQuery-UI-Full</PackageRequired>
     <Filelist>
-        <File Location="Kernel/Config/Files/ComplementoPreviewBody.xml" Permission="644"></File>
+        <File Location="Kernel/Config/Files/XML/ComplementoPreviewBody.xml" Permission="644"></File>
         <File Location="Kernel/Output/HTML/Templates/Standard/ShowPreviewBody.tt" Permission="644"></File>
         <File Location="Kernel/Output/HTML/OutputFilterPreviewBody.pm" Permission="644"></File>
         <File Location="Custom/FastPreview.sopm" Permission="644"></File>
