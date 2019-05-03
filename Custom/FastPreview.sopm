@@ -2,7 +2,7 @@
 <otrs_package version="1.1">
     <Name>FastPreview</Name>
     <Version>6.0.0</Version>
-    <Vendor>Complemento [Free]</Vendor>
+    <Vendor>Ligero [Community]</Vendor>
     <URL>http://www.complemento.net.br/otrs</URL>
     <License>GNU GENERAL PUBLIC LICENSE Version 2, June 1991</License>
     <Description Lang="en">Add and remove Watchers from the ticket and also send quick notes to them!</Description>
