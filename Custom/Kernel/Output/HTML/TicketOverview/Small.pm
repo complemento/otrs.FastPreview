@@ -12,6 +12,7 @@ use strict;
 use warnings;
 
 use Kernel::System::VariableCheck qw(:all);
+use Data::Dumper;
 
 our @ObjectDependencies = (
     'Kernel::Config',
@@ -407,12 +408,21 @@ sub Run {
 
             # get ticket object
             my $TicketObject = $Kernel::OM->Get('Kernel::System::Ticket');
+            my $ArticleObject = $Kernel::OM->Get('Kernel::System::Ticket::Article');
+
 
             # get last customer article
-            my %Article = $TicketObject->ArticleLastCustomerArticle(
+            #my %Article = $TicketObject->ArticleLastCustomerArticle(
+            #    TicketID      => $TicketID,
+            #    DynamicFields => 0,
+            #);
+
+            my @arrArticle = $ArticleObject->ArticleList(
                 TicketID      => $TicketID,
-                DynamicFields => 0,
+                SenderType    => 'customer',
+                OnlyLast      => 1
             );
+            my %Article = (scalar @arrArticle) ? $ArticleObject->BackendForArticle(%{$arrArticle[0]})->ArticleGet(%{$arrArticle[0]}) : {};
 
             # get ticket data
             my %Ticket = $TicketObject->TicketGet(
@@ -435,6 +445,10 @@ sub Run {
 
                 # show ticket create time in small view
                 $Article{Created} = $Ticket{Created};
+            } else {
+                $Article{TicketID} = $Ticket{TicketID};
+                $Article{TicketNumber} = $Ticket{TicketNumber};
+                $Article{OwnerID} = $Ticket{OwnerID};
             }
 
             # prepare a "long" version of the subject to show in the title attribute. We don't take
@@ -1355,6 +1369,7 @@ sub Run {
 
         # get user object
         my $UserObject = $Kernel::OM->Get('Kernel::System::User');
+        my $ArticleObject = $Kernel::OM->Get('Kernel::System::Ticket::Article');
 
         # user info
         my %UserInfo = $UserObject->GetUserData(
@@ -1362,24 +1377,21 @@ sub Run {
         );
 	##Recupera o primeiro Artigo do chamado
 	#
-       	my %ArticleFirst = $Kernel::OM->Get("Kernel::System::Ticket")->ArticleFirstArticle(
-	        TicketID      => $Article{TicketID},
-	        DynamicFields => 0,     # 0 or 1, see ArticleGet()
-    	);
-        my @ArticleIDs = $Kernel::OM->Get("Kernel::System::Ticket")->ArticleIndex(
-     	   SenderType => 'agent',                   # optional, to limit to a certain sender type
-        	TicketID   => $Article{TicketID},
-    	);
-	my %ArticleSecond;
-#	@ArticleIDs = grep { $_ ne $ArticleFirst{ArticleID} } @ArticleIDs;
-	delete $ArticleIDs[0]  if( $ArticleIDs[0] eq $ArticleFirst{ArticleID});  	
-	if(@ArticleIDs){
-		%ArticleSecond = $Kernel::OM->Get("Kernel::System::Ticket")->ArticleGet(
-        ArticleID     => $ArticleIDs[-1],
-        UserID        => $Self->{UserID},
-    );
+       	#my %ArticleFirst = $Kernel::OM->Get("Kernel::System::Ticket")->ArticleFirstArticle(
+	#        TicketID      => $Article{TicketID},
+	#        DynamicFields => 0,     # 0 or 1, see ArticleGet()
+    	#);
 
-	}
+        my @arrArticle = $ArticleObject->ArticleList( TicketID => $Article{TicketID}, OnlyFirst => 1 );
+        my %ArticleFirst = (scalar @arrArticle) ? $ArticleObject->BackendForArticle(%{$arrArticle[0]})->ArticleGet(%{$arrArticle[0]}) : {};
+
+	my %ArticleSecond;
+        my @ArticleIDs = $ArticleObject->ArticleList( TicketID => $Article{TicketID}, SenderType => 'agent' );
+        @ArticleIDs = grep { $_{ArticleID} eq $ArticleFirst{ArticleID} } @ArticleIDs;
+        if(@ArticleIDs) {
+           %ArticleSecond = $ArticleObject->BackendForArticle(%{$ArticleIDs[-1]})->ArticleGet(%{$ArticleIDs[-1]});
+        }
+
 	$Article{FirstArticle} =  \%ArticleFirst;
 	$Article{SecondArticle} = \%ArticleSecond;
 	#
