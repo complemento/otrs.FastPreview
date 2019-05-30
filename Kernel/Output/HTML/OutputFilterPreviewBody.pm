@@ -46,14 +46,10 @@ sub Run {
     my $ParamObject = $Kernel::OM->Get('Kernel::System::Web::Request');
     my $ConfigObject = $Kernel::OM->Get('Kernel::Config');
     my $LayoutObject = $Kernel::OM->Get('Kernel::Output::HTML::Layout');
-#	if(${ $Param{Data}} =~ /id=\"ArticleItems\"/ ){
-	   # Mostra widget central com iframe da pagina
-		my $iFrame = $LayoutObject->Output(
-		   	    TemplateFile => 'ShowPreviewBody',
-	        Data         => \%Data,
-    	);
-
-	 
+    my $iFrame = $LayoutObject->Output(
+        TemplateFile => 'ShowPreviewBody',
+        Data         => \%Data,
+    );
 }
 1;
 

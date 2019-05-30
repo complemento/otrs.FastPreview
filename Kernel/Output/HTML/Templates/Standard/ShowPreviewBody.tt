@@ -1,32 +1,29 @@
 [% WRAPPER JSOnDocumentComplete %] 
-
 <script type="text/javascript">//<![CDATA[
-$( function() { 
-	$(".MasterActionLink").parent().mouseenter(function( e){
-		var TicketID = $(this).parent().attr('id');
-		TicketID = TicketID.replace("TicketID_","");
-		var vla= '';
-		vla = $("#Prev_"+TicketID).html();
+$(function () {
+    $(".MasterActionLink").parent().mouseenter(function (e) {
+        var TicketID = $(this).parent().attr('id');
+        TicketID = TicketID.replace("TicketID_", "");
+        var vla = '';
+        vla = $("#Prev_" + TicketID).html();
 
-		$(this).tooltip({
-			tooltipClass: "customTooltip",
-			content:function(){
-				return vla;
-			},
-			 show: { effect: "", duration: 0 },
-			hide: { effect: "", duration: 0 }
- 
+        $(this).tooltip({
+            tooltipClass: "customTooltip",
+            content: function () {
+                return vla;
+            },
+            show: {
+                effect: "",
+                duration: 0
+            },
+            hide: {
+                effect: "",
+                duration: 0
+            }
 
-		});	
-	});
-	
-	$(".MasterActionLink").parent().mouseleave(function(){
-//		$(".ui-tooltip").remove();
-	});
-
-}); 
-
-
+        });
+    });
+});
 //]]></script>
 [% END %]
 

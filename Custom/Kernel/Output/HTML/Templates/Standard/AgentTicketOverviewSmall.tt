@@ -1,34 +1,40 @@
 # --
-# Copyright (C) 2001-2015 OTRS AG, http://otrs.com/
+# Copyright (C) 2001-2019 OTRS AG, https://otrs.com/
+# Copyright (C) 2019 Complemento, https://complemento.net.br/
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
-# the enclosed file COPYING for license information (AGPL). If you
-# did not receive this file, see http://www.gnu.org/licenses/agpl.txt.
+# the enclosed file COPYING for license information (GPL). If you
+# did not receive this file, see https://www.gnu.org/licenses/gpl-3.0.txt.
 # --
+<style type="text/css">
+.customTooltip {
+    position: absolute;
+    min-width: 700px !important;
+    max-width: 900px !important;
+    max-height: 500px !important;
+    min-height: 340px !important;
+    font-family: Geneva, Helvetica, Arial, sans-serif;
+    font-size: 10px;
+    left: 500px;
+    top: 410px;
+    opacity: 1;
+    z-index: 9999;
+}
 
-  <style type="text/css">
-			.customTooltip { position: absolute;
-								min-width:700px !important;
-								 max-width:900px !important;
-				 max-height:500px !important;
-				 min-height:340px !important; 
-				font-family:Geneva,Helvetica,Arial,sans-serif; 
-				font-size: 10px; 
-				left: 500px; 
-				top: 410px; 
-				opacity: 1;  
-			z-index:9999; }
-			.popover-content top: 0;            {
-		    padding: 14px;   left: 0;
-		    background-color:      #fff;
-		    -webkit-border-radius: 0 0 3px 3px;
-		    -moz-border-radius: 0 0 3px 3px;
-		    border-radius: 0 0 3px 3px;
-		    -webkit-background-clip: padding-box;
-		    -moz-background-clip: padding-box;
-		    background-clip: padding-box;
-	}
-	.ticket_summary h3 {
+.popover-content {
+    top: 0;
+    padding: 14px;
+    left: 0;
+    background-color: #fff;
+    -webkit-border-radius: 0 0 3px 3px;
+    -moz-border-radius: 0 0 3px 3px;
+    border-radius: 0 0 3px 3px;
+    -webkit-background-clip: padding-box;
+    -moz-background-clip: padding-box;
+    background-clip: padding-box;
+}
+
+.ticket_summary h3 {
     font-weight: 400;
     color: #999;
     font-size: 14px;
@@ -36,19 +42,24 @@
     border-bottom-width: 0;
     background-color: #ffffff;
 }
+
 .ticket_summary .author {
     font-weight: 600;
 }
 
-.ticket_status_label.small, .sla-policy-metric-action-label.small {
+.ticket_status_label.small,
+.sla-policy-metric-action-label.small {
     font-size: 11px;
 }
 
-.ticket_status_label.solved, .sla-policy-metric-action-label.solved {
+.ticket_status_label.solved,
+.sla-policy-metric-action-label.solved {
     background: #828282;
     color: white;
 }
-.ticket_status_label, .sla-policy-metric-action-label {
+
+.ticket_status_label,
+.sla-policy-metric-action-label {
     padding: 2px 10px 1px 10px;
     font-size: 14px;
     border-radius: 3px;
@@ -60,27 +71,33 @@
     display: inline-block;
     line-height: 16px;
 }
+
 .ticket_summary h3 .details {
     padding-left: 10px;
     vertical-align: middle;
 }
+
 .ticket_summary .priority.priority_- {
     display: none;
 }
+
 .ticket_summary .priority {
     text-transform: lowercase;
 }
+
 .ticket_summary .popover-content {
     padding: 13px 20px 20px 20px;
     color: #555;
     word-wrap: break-word;
 }
+
 .popover-title {
     font-size: 14px;
     background-color: #eee;
     word-break: break-word;
     padding-top: 11px;
 }
+
 .popover-title {
     padding: 9px 15px;
     line-height: 1;
@@ -90,58 +107,72 @@
     -moz-border-radius: 3px 3px 0 0;
     border-radius: 3px 3px 0 0;
 }
-	.ticket_summary .popover-content {
+
+.ticket_summary .popover-content {
     padding: 13px 20px 20px 20px;
     color: #555;
     word-wrap: break-word;
 }
-	.ticket_summary .comment {
+
+.ticket_summary .comment {
     margin-top: 7px;
     white-space: pre-line;
     line-height: 18px;
 }
-	.ticket_summary .last-comment-header, .ticket_summary .next-sla-header, .ticket_summary .comments-header {
+
+.ticket_summary .last-comment-header,
+.ticket_summary .next-sla-header,
+.ticket_summary .comments-header {
     color: #999;
     padding-bottom: 7px;
     margin-top: 23px;
     font-size: 14px;
     border-bottom: 1px solid #ddd;
 }
-.ticket_summary .last-comment-subhead, .ticket_summary .comment-subhead {
+
+.ticket_summary .last-comment-subhead,
+.ticket_summary .comment-subhead {
     margin: 17px 0 11px 0;
     line-height: 18px;
 }
+
 .ticket_summary .comment.private-comment {
     padding: 11px 15px;
     border-radius: 3px;
     border: 1px solid #efdaa3;
     background-color: #fff6d9;
 }
+
 .ticket_summary .comment {
     margin-top: 7px;
     white-space: pre-line;
     line-height: 12px;
     word-wrap: break-word;
 }
-.ticket_summary .last-comment-subhead, .ticket_summary .comment-subhead {
+
+.ticket_summary .last-comment-subhead,
+.ticket_summary .comment-subhead {
     margin: 17px 0 11px 0;
     line-height: 18px;
 }
+
 .ticket_summary .summary-date {
     float: right !important;
     font-weight: 400;
     font-size: 12px;
     color: #999;
 }
-.popover {
-#    position: absolute;
-#    top: 0;
-#    left: 0;
-#    z-index: 1010;
-#    display: none;
-#    padding: 5px;
-}		
-   </style>
+
+#.popover {
+#    # position: absolute;
+#    # top: 0;
+#    # left: 0;
+#    # z-index: 1010;
+#    # display: none;
+#    # padding: 5px;
+#}
+
+</style>
 
 [% RenderBlockStart("DocumentActionRow") %]
 <ul class="Actions">
@@ -160,44 +191,6 @@
 [% RenderBlockEnd("DocumentActionRow") %]
 
 [% RenderBlockStart("DocumentContent") %]
-[% WRAPPER JSOnDocumentComplete %]
-<script type="text/javascript">//<![CDATA[
-    Core.UI.ActionRow.Init();
-
-    $('a.AsPopup').bind('click', function (Event) {
-        Core.UI.Popup.OpenPopup($(this).attr('href'), 'Action');
-        return false;
-    });
-
-    $('.ColumnFilter').bind('change', function (Event) {
-        var URL, ColumnFilter, NewColumnFilterStrg, MyRegEx, SessionInformation;
-
-        // define variables
-        URL = Core.Config.Get('Baselink') + 'Action=' + '[% Env("Action") %]' + ';[% Data.LinkPage %]';
-        SessionInformation = Core.App.GetSessionInformation();
-        $.each(SessionInformation, function (Key, Value) {
-            URL += encodeURIComponent(Key) + '=' + encodeURIComponent(Value) + ';';
-        });
-        ColumnFilter = $(this)[0].name;
-        NewColumnFilterStrg = $(this)[0].name + '=' + $(this).val() + ';';
-        MyRegEx = new  RegExp(ColumnFilter+"=[^;]*;");
-
-        // check for already set parameter and replace
-        if (URL.match(MyRegEx)) {
-            URL = URL.replace(MyRegEx, NewColumnFilterStrg);
-        }
-
-        // otherwise add the new column filter
-        else {
-            URL = URL + NewColumnFilterStrg;
-        }
-
-        // redirect
-        window.location.href =  URL;
-    });
-//]]></script>
-[% END %]
-
 <div id="OverviewBody" class="Overview TicketList">
 [% RenderBlockStart("NoTicketFound") %]
     <div id="EmptyMessageSmall">
@@ -222,15 +215,15 @@
                     </th>
 [% RenderBlockEnd("BulkNavBar") %]
 [% RenderBlockStart("OverviewNavBarPageFlag") %]
-                    <th class="[% Data.CSS | html %]">
+                    <th class="OverviewHeader [% Data.CSS | html %]" title="[% Translate(Data.Title) | html %]">
 [% RenderBlockStart("OverviewNavBarPageFlagLink") %]
-                        <a name="OverviewControl" href="[% Env("Baselink") %]Action=[% Env("Action") %];[% Data.LinkSort %];SortBy=[% Data.Name | uri %];OrderBy=[% Data.OrderBy | uri %]" title="[% Translate(Data.Title) | html %]">
-                            <em class="PrintOnly">[% Translate(Data.Title) %]</em>
+                        <a name="OverviewControl" href="[% Env("Baselink") %]Action=[% Env("Action") | uri %];[% Data.LinkSort %];SortBy=[% Data.Name | uri %];OrderBy=[% Data.OrderBy | uri %]" title="[% Translate(Data.Title) | html %]">
+                            <em class="PrintOnly">[% Translate(Data.Title) | html %]</em>
                         </a>
 [% RenderBlockEnd("OverviewNavBarPageFlagLink") %]
 [% RenderBlockStart("OverviewNavBarPageFlagEmpty") %]
                         <span title="[% Translate(Data.Name) | html %]">
-                            <em class="PrintOnly">[% Translate(Data.Name) %]</em>
+                            <em class="PrintOnly">[% Translate(Data.Name) | html %]</em>
                         </span>
 [% RenderBlockEnd("OverviewNavBarPageFlagEmpty") %]
                     </th>
@@ -238,7 +231,7 @@
 
 [% RenderBlockStart("OverviewNavBarPageTicketHeader") %]
 [% RenderBlockStart("OverviewNavBarPageTicketNumber") %]
-                    <th class="TicketNumber [% Data.CSS | html %]">
+                    <th class="OverviewHeader [% Data.CSS | html %]">
                         <a name="OverviewControl" href="[% Env("Baselink") %]Action=[% Env("Action") %];[% Data.LinkSort %];SortBy=TicketNumber;OrderBy=[% Data.OrderBy | uri %]" title="[% Translate(Data.Title) | html %]">[% Config("Ticket::Hook") %]</a>
                     </th>
 [% RenderBlockEnd("OverviewNavBarPageTicketNumber") %]
@@ -255,14 +248,6 @@
 
 [% RenderBlockStart("ContentLargeTicketGenericHeaderColumnFilterLinkCustomerUserSearch") %]
                                 <input type="text" class="CustomerUserAutoComplete" autocomplete="off" />
-[% WRAPPER JSOnDocumentComplete %]
-<script type="text/javascript">//<![CDATA[
-Core.Config.Set('CustomerUserAutocomplete.QueryDelay', "[% Data.queryDelay | html %]");
-Core.Config.Set('CustomerUserAutocomplete.MaxResultsDisplayed', "[% Data.maxResultsDisplayed | html %]");
-Core.Config.Set('CustomerUserAutocomplete.MinQueryLength', "[% Data.minQueryLength | html %]");
-Core.Agent.TableFilters.InitCustomerUserAutocomplete( $(".CustomerUserAutoComplete") );
-//]]></script>
-[% END %]
 [% RenderBlockEnd("ContentLargeTicketGenericHeaderColumnFilterLinkCustomerUserSearch") %]
 
                             </div>
@@ -280,26 +265,10 @@ Core.Agent.TableFilters.InitCustomerUserAutocomplete( $(".CustomerUserAutoComple
 
 [% RenderBlockStart("ContentLargeTicketGenericHeaderColumnFilterLinkCustomerIDSearch") %]
                                 <input type="text" class="CustomerIDAutoComplete" autocomplete="off" />
-[% WRAPPER JSOnDocumentComplete %]
-<script type="text/javascript">//<![CDATA[
-Core.Config.Set('CustomerIDAutocomplete.QueryDelay', "[% Data.queryDelay | html %]");
-Core.Config.Set('CustomerIDAutocomplete.MaxResultsDisplayed', "[% Data.maxResultsDisplayed | html %]");
-Core.Config.Set('CustomerIDAutocomplete.MinQueryLength', "[% Data.minQueryLength | html %]");
-Core.Agent.TableFilters.InitCustomerIDAutocomplete( $(".CustomerIDAutoComplete") );
-//]]></script>
-[% END %]
 [% RenderBlockEnd("ContentLargeTicketGenericHeaderColumnFilterLinkCustomerIDSearch") %]
 
 [% RenderBlockStart("ContentLargeTicketGenericHeaderColumnFilterLinkUserSearch") %]
                                 <input type="text" class="UserAutoComplete" autocomplete="off" />
-[% WRAPPER JSOnDocumentComplete %]
-<script type="text/javascript">//<![CDATA[
-Core.Config.Set('UserAutocomplete.QueryDelay', "[% Data.queryDelay | html %]");
-Core.Config.Set('UserAutocomplete.MaxResultsDisplayed', "[% Data.maxResultsDisplayed | html %]");
-Core.Config.Set('UserAutocomplete.MinQueryLength', "[% Data.minQueryLength | html %]");
-Core.Agent.TableFilters.InitUserAutocomplete( $(".UserAutoComplete") );
-//]]></script>
-[% END %]
 [% RenderBlockEnd("ContentLargeTicketGenericHeaderColumnFilterLinkUserSearch") %]
                             </div>
                         </div>
@@ -336,7 +305,7 @@ Core.Agent.TableFilters.InitUserAutocomplete( $(".UserAutoComplete") );
                                 [% Data.ColumnFilterStrg %]
                             </div>
                         </div>
-                        <a name="OverviewControl" href="[% Env("Baselink") %]Action=[% Env("Action") %];[% Data.LinkSort %];SortBy=DynamicField_[% Data.DynamicFieldName | uri %];OrderBy=[% Data.OrderBy | uri %]" title="[% Translate(Data.Title) | html %]">[% Data.Label | html %]</a>
+                        <a name="OverviewControl" href="[% Env("Baselink") %]Action=[% Env("Action") %];[% Data.LinkSort %];SortBy=DynamicField_[% Data.DynamicFieldName | uri %];OrderBy=[% Data.OrderBy | uri %]" title="[% Translate(Data.Title) | html %]">[% Translate(Data.Label) | html %]</a>
 [% RenderBlockEnd("OverviewNavBarPageDynamicFieldFiltrableSortable") %]
 
 [% RenderBlockStart("OverviewNavBarPageDynamicFieldFiltrableNotSortable") %]
@@ -423,175 +392,42 @@ Core.Agent.TableFilters.InitUserAutocomplete( $(".UserAutoComplete") );
 #[% RenderBlockEnd("OverviewNavBarPageDynamicField_Field2_FiltrableNotSortable") %]
 #[% RenderBlockEnd("OverviewNavBarPageDynamicField_Field2") %]
 #                    </th>
-# ---
 
-[% WRAPPER JSOnDocumentComplete %]
-<script type="text/javascript">//<![CDATA[
-$('.OverviewHeader').off('click').on('click', '.ColumnSettingsTrigger', function() {
-
-    var $TriggerObj = $(this),
-        FilterName;
-
-    if ($TriggerObj.hasClass('Active')) {
-
-        $TriggerObj
-            .next('.ColumnSettingsContainer')
-            .find('.ColumnSettingsBox')
-            .fadeOut('fast', function() {
-                $TriggerObj.removeClass('Active');
-            });
-    }
-    else {
-
-        // slide up all open settings widgets
-        $('.ColumnSettingsTrigger')
-            .next('.ColumnSettingsContainer')
-            .find('.ColumnSettingsBox')
-            .fadeOut('fast', function() {
-                $(this).parent().prev('.ColumnSettingsTrigger').removeClass('Active');
-            });
-
-        // show THIS settings widget
-        $TriggerObj
-            .next('.ColumnSettingsContainer')
-            .find('.ColumnSettingsBox')
-            .fadeIn('fast', function() {
-
-                $TriggerObj.addClass('Active');
-
-                // refresh filter dropdown
-                FilterName = $TriggerObj
-                    .next('.ColumnSettingsContainer')
-                    .find('select')
-                    .attr('name');
-
-                if (
-                        $TriggerObj.closest('th').hasClass('CustomerID') ||
-                        $TriggerObj.closest('th').hasClass('CustomerUserID') ||
-                        $TriggerObj.closest('th').hasClass('Responsible') ||
-                        $TriggerObj.closest('th').hasClass('Owner')
-                    ) {
-
-                    if (!$TriggerObj.parent().find('.SelectedValue').length) {
-                        Core.AJAX.FormUpdate($('#Nothing'), 'AJAXFilterUpdate', FilterName, [ FilterName ], function() {
-                            var AutoCompleteValue = $TriggerObj
-                                    .next('.ColumnSettingsContainer')
-                                    .find('select')
-                                    .val(),
-                                AutoCompleteText  = $TriggerObj
-                                    .next('.ColumnSettingsContainer')
-                                    .find('select')
-                                    .find('option:selected')
-                                    .text();
-
-                            if (AutoCompleteValue !== 'DeleteFilter') {
-
-                                $TriggerObj
-                                    .next('.ColumnSettingsContainer')
-                                    .find('select')
-                                    .after('<span class="SelectedValue Hidden"><a href="#">x</a>' + AutoCompleteText + ' (' + AutoCompleteValue + ')</span>')
-                                    .parent()
-                                    .find('.SelectedValue')
-                                    .find('a')
-                                    .off()
-                                    .on('click', function() {
-                                        $(this)
-                                            .closest('.ColumnSettingsContainer')
-                                            .find('select')
-                                            .val('DeleteFilter')
-                                            .trigger('change');
-
-                                        return false;
-                                    });
-                            }
-                        });
-                    }
-                }
-                else {
-                    Core.AJAX.FormUpdate($('#ColumnFilterAttributes'), 'AJAXFilterUpdate', FilterName, [ FilterName ]);
-                }
-        });
-    }
-
-    return false;
-});
-
-//]]></script>
-[% END %]
                 </tr>
             </thead>
 [% RenderBlockEnd("TableHeader") %]
 [% RenderBlockStart("TableBody") %]
             <tbody>
 [% RenderBlockStart("Record") %]
-		<div id="Prev_[% Data.TicketID | html %]" class= "" style=" display:none;">
-			<div  class="ember-view popover ticket_summary" style="height:50% !important;">
-			
-#TESTE
-#
-<h3 class="popover-title">
-    <span class="ticket_status_label small solved">[% Data.FirstArticle.State %] </span><span class="details"> # [% Data.FirstArticle.TicketNumber %] 
-      <span class="priority priority_-">(-)</span>
-    </span>
-  </h3>
-	<div class="popover-content">
-		    <p>[% Data.FirstArticle.Subject | html %]</p>
-			    <div class="comment">
-					[% Data.FirstArticle.Body| truncate(250) | html %]
-				</div>
-
-  [% IF Data.SecondArticle.TicketID %]   
-			      <div class="last-comment-header">[% Translate("Most recent review") | html %]</div>
-
-	 	     <div class="last-comment-subhead">
-	    	    <span class="author"> [% Data.SecondArticle.Owner | html %]</span>
-		        <span class="summary-date"><time class="live" datetime="[% Data.SecondArticle.Created %]" title="[% Data.SecondArticle.Created %]">[% Data.SecondArticle.Created | Localize("TimeShort")  %]</time></span>
-		      </div>
-	    		  <div class="comment ">
-						[% Data.SecondArticle.Body |  truncate(250) |html %] 	
-
-				</div>
-</div>
+# Complemento
+                <div id="Prev_[% Data.TicketID | html %]" class= "" style=" display:none;">
+                    <div  class="ember-view popover ticket_summary" style="height:50% !important;">
+                        <h3 class="popover-title">
+                            <span class="ticket_status_label small solved">[% Translate(Data.State) %] </span>
+                            <span class="details"> # [% Data.TicketNumber %] - [% Data.Title %]</span>
+                        </h3>
+	                    <div class="popover-content">
+		                    <p>[% Data.FirstArticle.Subject | html %]</p>
+                            <div class="comment">
+                                [% Data.FirstArticle.Body| truncate(250) | html %]
+                            </div>
+[% IF Data.SecondArticle.TicketID %]   
+	        		        <div class="last-comment-header">[% Translate("Most recent review") | html %]</div>
+                            <div class="last-comment-subhead">
+                                <span class="author"> [% Data.SecondArticle.Owner | html %]</span>
+                                <span class="summary-date">
+                                    <time class="live" datetime="[% Data.SecondArticle.Created %]" 
+                                    title="[% Data.SecondArticle.Created %]">[% Data.SecondArticle.Created | Localize("TimeShort")  %]
+                                    </time>
+                                </span>
+                            </div>
+	    		            <div class="comment ">
+						        [% Data.SecondArticle.Body |  truncate(250) |html %] 	
+            				</div>
 [% END %]
-#
-## 	
-#					<div class="ArticleMailHeader">
-#						 <fieldset class="TableLike FixedLabelSmall">				
-#							<label class="Switchable" > [% Translate("Re") | html %] :</label>
-#							<p class="Value" title="[% Data.FirstArticle.Subject | html %] ">
-#								 [% Data.FirstArticle.Subject | html %]  
-#							</p>
-#						</fieldset>
-#						
-#					</div>
-#					</br></br>
-#						<fieldset>
-#						<label style="font-weight:bold;"> [% Translate("Message ") | html %]: </label>
-#						<p class="Value" style="word-wrap: break-word;" > [% Data.FirstArticle.Body| truncate(250) | html %] </p>
-#						</fieldset>
-#				</div>
-#			</br>
-#				[% IF Data.SecondArticle.TicketID %]	
-#			
-#			<div style="height:50% !important;">
-#				 <div class="ArticleMailHeader">
-#	    	    	 <fieldset class="TableLike FixedLabelSmall">
-#						<label class="Switchable"> [% Translate("Agent") | html %]: </label>
-#						<p class="Value" title="&quot; [% Data.SecondArticle.Owner | html %]"> [% Data.SecondArticle.Owner | html %] </p>			
-#						<span class="summary-date"><time class="live" datetime="[% Data.SecondArticle.Created %]" title="">[% Data.SecondArticle.Created %]</time></span>
-#					</fieldset>
-#	
-#				</div>
-#				</br></br>
-#				 <fieldset class="">
-#					<label style="font-weight:bold;"> [% Translate("Message ") | html %]: </label>
-#					<p class="Value" style="word-wrap: break-word;" >   [% Data.SecondArticle.Body |  truncate(250) | html %]  </p>
-#									
-#					</fieldset>
-#				</div>
-#	
-#				[% END %]
-		</div>
+                        </div>
+                    </div>
+                </div>
                 <tr id="TicketID_[% Data.TicketID | html %]" class="MasterAction">
 
 [% RenderBlockStart("GeneralOverviewRow") %]
@@ -628,31 +464,29 @@ $('.OverviewHeader').off('click').on('click', '.ColumnSettingsTrigger', function
 [% RenderBlockEnd("RecordEscalationTime") %]
 [% RenderBlockStart("RecordOwner") %]
                     <td>
-                        <div title="[% Data.UserFirstname | html %] [% Data.UserLastname | html %] ([% Data.Owner | html %])">[% Data.UserFirstname | truncate(15) | html %] [% Data.UserLastname | truncate(15) | html %]</div>
+                        <div title="[% Data.UserFullname | html %] ([% Data.Owner | html %])">[% Data.UserFullname | truncate(50) | html %]</div>
                     </td>
 [% RenderBlockEnd("RecordOwner") %]
+[% RenderBlockStart("RecordResponsible") %]
+                    <td>
+                        <div title="[% Data.ResponsibleInfo.UserFullname | html %] ([% Data.Responsible | html %])">[% Data.ResponsibleInfo.UserFullname | truncate(50) | html %]</div>
+                    </td>
+[% RenderBlockEnd("RecordResponsible") %]
 [% RenderBlockStart("RecordCustomerID") %]
                     <td>
                         <a href="[% Env("Baselink") %]Action=AgentTicketCustomer;TicketID=[% Data.TicketID | uri %]" class="AsPopup">
-                            <span title="[% Data.CustomerID | html %]">[% Data.CustomerID | truncate(15) | html %]</span>
+                            <span title="[% Data.CustomerID | html %]">[% Data.CustomerID | truncate(100) | html %]</span>
                         </a>
                     </td>
 [% RenderBlockEnd("RecordCustomerID") %]
-[% RenderBlockStart("RecordLastCustomerSubject") %]
+[% RenderBlockStart("RecordTicketCreatedBy") %]
                     <td>
-                        <div title="[% Data.From | html %]">[% Data.FromRealname | truncate(30) | html %]</div>
-                        <div title="[% Data.SubjectLong | html %]">[% Data.Subject | html %]</div>
+                        <div title="[% Data.UserFullname | html %] ([% Data.UserLogin | html %])">[% Data.UserFullname | truncate(50) | html %]</div>
                     </td>
-[% RenderBlockEnd("RecordLastCustomerSubject") %]
-[% RenderBlockStart("RecordTicketTitle") %]
-                    <td>
-                        <div title="[% Data.From | html %]">[% Data.FromRealname | truncate(30) | html %]</div>
-                        <div title="[% Data.Title | html %]">[% Data.Title | html %]</div>
-                    </td>
-[% RenderBlockEnd("RecordTicketTitle") %]
+[% RenderBlockEnd("RecordTicketCreatedBy") %]
 [% RenderBlockStart("RecordTicketColumn") %]
                     <td>
-                        <div title="[% Data.GenericValue | html %]">[% Data.GenericValue | truncate(30) | html %]</div>
+                        <div title="[% Data.GenericValue | html %]">[% Data.GenericValue | truncate(100) | html %]</div>
                     </td>
 [% RenderBlockEnd("RecordTicketColumn") %]
 [% RenderBlockStart("RecordTicketColumnTranslatable") %]
@@ -717,19 +551,6 @@ $('.OverviewHeader').off('click').on('click', '.ColumnSettingsTrigger', function
 
                 </tr>
 
-[% RenderBlockStart("DocumentReadyActionRowAdd") %]
-[% FOREACH MenuElement IN Data.Data %]
-    [% MenuElement.Name = Interpolate(MenuElement.Name) %]
-    [% MenuElement.Link = Interpolate(MenuElement.Link) %]
-    [% MenuElement.Description = Interpolate(MenuElement.Description) %]
-[% END %]
-[% WRAPPER JSOnDocumentComplete %]
-<script type="text/javascript">//<![CDATA[
-    Core.UI.ActionRow.AddActions($('#TicketID_[% Data.TicketID | html %]'), [% JSON(Data.Data) %]);
-//]]></script>
-[% END %]
-[% RenderBlockEnd("DocumentReadyActionRowAdd") %]
-
 [% RenderBlockEnd("Record") %]
             </tbody>
 [% RenderBlockEnd("TableBody") %]
@@ -737,53 +558,22 @@ $('.OverviewHeader').off('click').on('click', '.ColumnSettingsTrigger', function
 [% RenderBlockEnd("OverviewTable") %]
     </form>
 </div>
-[% RenderBlockStart("DocumentReadyStart") %]
-[% WRAPPER JSOnDocumentComplete %]
-<script type="text/javascript">//<![CDATA[
-    Core.UI.InitCheckboxSelection($('table td.Checkbox'));
-    $('.MasterAction').bind('click', function (Event) {
-        var $MasterActionLink = $(this).find('.MasterActionLink');
-        // prevent MasterAction on Dynamic Fields links
-        if ($(Event.target).hasClass('DynamicFieldLink')) {
-            return true;
-        }
-        // only act if the link was not clicked directly
-        if (Event.target !== $MasterActionLink.get(0)) {
-            if (Event.ctrlKey || Event.metaKey) {
-                window.open($MasterActionLink.attr('href'));
-            }
-            else {
-                window.location = $MasterActionLink.attr('href');
-            }
-            return false;
-        }
-    });
-//]]></script>
-[% END %]
-[% RenderBlockEnd("DocumentReadyStart") %]
 [% RenderBlockEnd("DocumentContent") %]
 
 [% RenderBlockStart("DocumentMenuItemMoveForm") %]
 <li class="[% Data.Class | html %]">
-    <form title="[% Translate("Move ticket to a different queue") | html %]" action="[% Env("CGIHandle") %]" method="post">
+    <form title="[% Translate("Move ticket to a different queue") | html %]" action="[% Env("CGIHandle") | html %]" method="post">
         <input type="hidden" name="Action" value="AgentTicketMove"/>
         <input type="hidden" name="QueueID" value="[% Data.QueueID | html %]"/>
         <input type="hidden" name="TicketID" value="[% Data.TicketID | html %]"/>
         <label for="DestQueueID" class="InvisibleText">[% Translate("Change queue") | html %]:</label>
         [% Data.MoveQueuesStrg %]
     </form>
-[% WRAPPER JSOnDocumentComplete %]
-<script type="text/javascript">//<![CDATA[
-    $('.OverviewActions').on('change', 'select[name=DestQueueID]', function (Event) {
-        $(this).closest('form').submit();
-    });
-//]]></script>
-[% END %]
 </li>
 [% RenderBlockEnd("DocumentMenuItemMoveForm") %]
 
 [% RenderBlockStart("DocumentColumnFilterForm") %]
-<form title="[% Translate("Column Filters Form") | html %]" action="[% Env("CGIHandle") %]" method="post" name="ColumnFilterAttributes" id="ColumnFilterAttributes">
+<form title="[% Translate("Column Filters Form") | html %]" action="[% Env("CGIHandle") | html %]" method="post" name="ColumnFilterAttributes" id="ColumnFilterAttributes">
 [% RenderBlockStart("DocumentColumnFilterFormElement") %]
     <input type="hidden" name="[% Data.ElementName | html %]" value="[% Data.ElementValue | html %]"/>
 [% RenderBlockEnd("DocumentColumnFilterFormElement") %]

@@ -1,13 +1,13 @@
 <?xml version="1.0" encoding="utf-8" ?>
 <otrs_package version="1.1">
     <Name>FastPreview</Name>
-    <Version>6.0.1</Version>
+    <Version>6.0.2</Version>
     <Vendor>Ligero [Community]</Vendor>
     <URL>http://www.complemento.net.br/otrs</URL>
     <License>GNU GENERAL PUBLIC LICENSE Version 2, June 1991</License>
-    <Description Lang="en">Add and remove Watchers from the ticket and also send quick notes to them!</Description>
+    <Description Lang="en">Shows a fast preview of ticket most important articles when passing the mouse over in the small overview screens.</Description>
     <Framework>6.0.x</Framework>
-    <IntroInstall Lang="en" Title="Tutorial" Type="pre">Don't use this package without testing exautivily on a devel server.</IntroInstall>
+    <IntroInstall Lang="en" Title="Tutorial" Type="pre">You are about to install FastPreview AddOn! A free AddOn for ((OTRS)) Community Edition made by LigeroSmart.</IntroInstall>
     <PackageRequired Version="1.11.4">JQuery-UI-Full</PackageRequired>
     <Filelist>
         <File Location="Kernel/Config/Files/XML/ComplementoPreviewBody.xml" Permission="644"></File>

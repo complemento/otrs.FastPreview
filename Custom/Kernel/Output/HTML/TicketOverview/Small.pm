@@ -1,9 +1,10 @@
 # --
-# Copyright (C) 2001-2015 OTRS AG, http://otrs.com/
+# Copyright (C) 2001-2019 OTRS AG, https://otrs.com/
+# Copyright (C) 2019 Complemento, http://complemento.net.br/
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
-# the enclosed file COPYING for license information (AGPL). If you
-# did not receive this file, see http://www.gnu.org/licenses/agpl.txt.
+# the enclosed file COPYING for license information (GPL). If you
+# did not receive this file, see https://www.gnu.org/licenses/gpl-3.0.txt.
 # --
 
 package Kernel::Output::HTML::TicketOverview::Small;
@@ -12,19 +13,22 @@ use strict;
 use warnings;
 
 use Kernel::System::VariableCheck qw(:all);
-use Data::Dumper;
+use Kernel::Language qw(Translatable);
 
 our @ObjectDependencies = (
     'Kernel::Config',
+    'Kernel::Language',
     'Kernel::System::Log',
     'Kernel::Output::HTML::Layout',
     'Kernel::System::CustomerUser',
+    'Kernel::System::Group',
     'Kernel::System::User',
     'Kernel::System::JSON',
     'Kernel::System::DynamicField',
     'Kernel::System::Ticket::ColumnFilter',
     'Kernel::System::DynamicField::Backend',
     'Kernel::System::Ticket',
+    'Kernel::System::Ticket::Article',
     'Kernel::System::Main',
 );
 
@@ -40,8 +44,6 @@ sub new {
 
     # get config object
     my $ConfigObject = $Kernel::OM->Get('Kernel::Config');
-
-    $Self->{SmallViewColumnHeader} = $ConfigObject->Get('Ticket::Frontend::OverviewSmall')->{ColumnHeader};
 
     # set pref for columns key
     $Self->{PrefKeyColumns} = 'UserFilterColumnsEnabled' . '-' . $Self->{Action};
@@ -88,7 +90,20 @@ sub new {
             Data => $Preferences{ $Self->{PrefKeyColumns} },
         );
 
-        @ColumnsEnabled = @{$ColumnsEnabled};
+        # remove duplicate columns
+        my %UniqueColumns;
+        my @ColumnsEnabledAux;
+
+        for my $Column ( @{$ColumnsEnabled} ) {
+            if ( !$UniqueColumns{$Column} ) {
+                push @ColumnsEnabledAux, $Column;
+            }
+            $UniqueColumns{$Column} = 1;
+        }
+
+        # set filtered column list
+        @ColumnsEnabled = @ColumnsEnabledAux;
+
     }
 
     # always set TicketNumber
@@ -121,12 +136,13 @@ sub new {
         FieldFilter => $Self->{DynamicFieldFilter} || {},
     );
 
-    # hash with all valid sortable columuns (taken from TicketSearch)
-    # SortBy  => 'Age',   # Owner|Responsible|CustomerID|State|TicketNumber|Queue
+    # hash with all valid sortable columns (taken from TicketSearch)
+    # SortBy  => 'Age',   # Created|Owner|Responsible|CustomerID|State|TicketNumber|Queue
     # |Priority|Type|Lock|Title|Service|Changed|SLA|PendingTime|EscalationTime
     # | EscalationUpdateTime|EscalationResponseTime|EscalationSolutionTime
     $Self->{ValidSortableColumns} = {
         'Age'                    => 1,
+        'Created'                => 1,
         'Owner'                  => 1,
         'Responsible'            => 1,
         'CustomerID'             => 1,
@@ -174,7 +190,7 @@ sub new {
     # get dynamic field backend object
     my $DynamicFieldBackendObject = $Kernel::OM->Get('Kernel::System::DynamicField::Backend');
 
-    # get filtrable dynamic fields
+    # get filterable dynamic fields
     # cycle trough the activated dynamic fields for this screen
     DYNAMICFIELD:
     for my $DynamicFieldConfig ( @{ $Self->{DynamicField} } ) {
@@ -185,7 +201,7 @@ sub new {
             Behavior           => 'IsFiltrable',
         );
 
-        # if the dynamic field is filtrable add it to the AvailableFilterableColumns hash
+        # if the dynamic field is filterable add it to the AvailableFilterableColumns hash
         if ($IsFiltrable) {
             $Self->{AvailableFilterableColumns}->{ 'DynamicField_' . $DynamicFieldConfig->{Name} } = 1;
         }
@@ -229,10 +245,15 @@ sub ActionRow {
             $BulkFeature = 1;
         }
         else {
+            my $GroupObject = $Kernel::OM->Get('Kernel::System::Group');
             GROUP:
             for my $Group (@Groups) {
-                next GROUP if !$LayoutObject->{"UserIsGroup[$Group]"};
-                if ( $LayoutObject->{"UserIsGroup[$Group]"} eq 'Yes' ) {
+                my $HasPermission = $GroupObject->PermissionCheck(
+                    UserID    => $Self->{UserID},
+                    GroupName => $Group,
+                    Type      => 'rw',
+                );
+                if ($HasPermission) {
                     $BulkFeature = 1;
                     last GROUP;
                 }
@@ -250,7 +271,7 @@ sub ActionRow {
             Name => 'DocumentActionRowBulk',
             Data => {
                 %Param,
-                Name => 'Bulk',
+                Name => Translatable('Bulk'),
             },
         );
     }
@@ -265,6 +286,9 @@ sub ActionRow {
         );
     }
 
+    my %ColumnTranslations;
+    my $LanguageObject = $Kernel::OM->Get('Kernel::Language');
+
     # add translations for the allocation lists for regular columns
     my $Columns = $Self->{Config}->{DefaultColumns} || $ConfigObject->Get('DefaultOverviewColumns') || {};
     if ( $Columns && IsHashRefWithData($Columns) ) {
@@ -277,30 +301,37 @@ sub ActionRow {
 
             my $TranslatedWord = $Column;
             if ( $Column eq 'EscalationTime' ) {
-                $TranslatedWord = 'Service Time';
+                $TranslatedWord = Translatable('Service Time');
             }
             elsif ( $Column eq 'EscalationResponseTime' ) {
-                $TranslatedWord = 'First Response Time';
+                $TranslatedWord = Translatable('First Response Time');
             }
             elsif ( $Column eq 'EscalationSolutionTime' ) {
-                $TranslatedWord = 'Solution Time';
+                $TranslatedWord = Translatable('Solution Time');
             }
             elsif ( $Column eq 'EscalationUpdateTime' ) {
-                $TranslatedWord = 'Update Time';
+                $TranslatedWord = Translatable('Update Time');
             }
             elsif ( $Column eq 'PendingTime' ) {
-                $TranslatedWord = 'Pending till';
+                $TranslatedWord = Translatable('Pending till');
+            }
+            elsif ( $Column eq 'CustomerCompanyName' ) {
+                $TranslatedWord = Translatable('Customer Name');
+            }
+            elsif ( $Column eq 'CustomerID' ) {
+                $TranslatedWord = Translatable('Customer ID');
+            }
+            elsif ( $Column eq 'CustomerName' ) {
+                $TranslatedWord = Translatable('Customer User Name');
+            }
+            elsif ( $Column eq 'CustomerUserID' ) {
+                $TranslatedWord = Translatable('Customer User ID');
             }
 
-            $LayoutObject->Block(
-                Name => 'ColumnTranslation',
-                Data => {
-                    ColumnName      => $Column,
-                    TranslateString => $TranslatedWord,
-                },
-            );
-            $LayoutObject->Block(
-                Name => 'ColumnTranslationSeparator',
+            # send data to JS
+            $LayoutObject->AddJSData(
+                Key   => 'Column' . $Column,
+                Value => $LanguageObject->Translate($TranslatedWord),
             );
         }
     }
@@ -322,19 +353,11 @@ sub ActionRow {
 
             $Counter++;
 
-            $LayoutObject->Block(
-                Name => 'ColumnTranslation',
-                Data => {
-                    ColumnName      => 'DynamicField_' . $DynamicField->{Name},
-                    TranslateString => $DynamicField->{Label},
-                },
+            # send data to JS
+            $LayoutObject->AddJSData(
+                Key   => 'ColumnDynamicField_' . $DynamicField->{Name},
+                Value => $LanguageObject->Translate( $DynamicField->{Label} ),
             );
-
-            if ( $Counter < scalar @{$ColumnsDynamicField} ) {
-                $LayoutObject->Block(
-                    Name => 'ColumnTranslationSeparator',
-                );
-            }
         }
     }
 
@@ -363,12 +386,11 @@ sub Run {
         $Self->{AvailableFilterableColumns} = {};    # disable all column filters
     }
 
-    # check needed stuff
-    for (qw(TicketIDs PageShown StartHit)) {
-        if ( !$Param{$_} ) {
+    for my $Item (qw(TicketIDs PageShown StartHit)) {
+        if ( !$Param{$Item} ) {
             $Kernel::OM->Get('Kernel::System::Log')->Log(
                 Priority => 'error',
-                Message  => "Need $_!"
+                Message  => "Need $Item!",
             );
             return;
         }
@@ -389,10 +411,15 @@ sub Run {
             $BulkFeature = 1;
         }
         else {
+            my $GroupObject = $Kernel::OM->Get('Kernel::System::Group');
             GROUP:
             for my $Group (@Groups) {
-                next GROUP if !$LayoutObject->{"UserIsGroup[$Group]"};
-                if ( $LayoutObject->{"UserIsGroup[$Group]"} eq 'Yes' ) {
+                my $HasPermission = $GroupObject->PermissionCheck(
+                    UserID    => $Self->{UserID},
+                    GroupName => $Group,
+                    Type      => 'rw',
+                );
+                if ($HasPermission) {
                     $BulkFeature = 1;
                     last GROUP;
                 }
@@ -402,69 +429,81 @@ sub Run {
 
     my $Counter = 0;
     my @ArticleBox;
+
+    my $TicketObject  = $Kernel::OM->Get('Kernel::System::Ticket');
+    my $ArticleObject = $Kernel::OM->Get('Kernel::System::Ticket::Article');
+
     for my $TicketID ( @{ $Param{TicketIDs} } ) {
         $Counter++;
         if ( $Counter >= $Param{StartHit} && $Counter < ( $Param{PageShown} + $Param{StartHit} ) ) {
 
-            # get ticket object
-            my $TicketObject = $Kernel::OM->Get('Kernel::System::Ticket');
-            my $ArticleObject = $Kernel::OM->Get('Kernel::System::Ticket::Article');
-
-
-            # get last customer article
-            #my %Article = $TicketObject->ArticleLastCustomerArticle(
-            #    TicketID      => $TicketID,
-            #    DynamicFields => 0,
-            #);
-
-            my @arrArticle = $ArticleObject->ArticleList(
-                TicketID      => $TicketID,
-                SenderType    => 'customer',
-                OnlyLast      => 1
+            # Get last customer article.
+            my @Articles = $ArticleObject->ArticleList(
+                TicketID   => $TicketID,
+                SenderType => 'customer',
+                OnlyLast   => 1,
             );
-            my %Article = (scalar @arrArticle) ? $ArticleObject->BackendForArticle(%{$arrArticle[0]})->ArticleGet(%{$arrArticle[0]}) : {};
 
-            # get ticket data
+            # If the ticket has no customer article, get the last agent article.
+            if ( !@Articles ) {
+                @Articles = $ArticleObject->ArticleList(
+                    TicketID   => $TicketID,
+                    SenderType => 'agent',
+                    OnlyLast   => 1,
+                );
+            }
+
+            # Finally, if everything failed, get latest article.
+            if ( !@Articles ) {
+                @Articles = $ArticleObject->ArticleList(
+                    TicketID => $TicketID,
+                    OnlyLast => 1,
+                );
+            }
+
+            my %Article;
+            for my $Article (@Articles) {
+                %Article = $ArticleObject->BackendForArticle( %{$Article} )->ArticleGet(
+                    %{$Article},
+                    DynamicFields => 0,
+                );
+            }
+
+            # Get ticket data.
             my %Ticket = $TicketObject->TicketGet(
                 TicketID      => $TicketID,
+                Extended      => 1,
                 DynamicFields => 0,
             );
 
-            # Fallback for tickets without articles: get at least basic ticket data
-            if ( !%Article ) {
-                %Article = $TicketObject->TicketGet(
-                    TicketID      => $TicketID,
-                    DynamicFields => 0,
+            %Article = ( %Article, %Ticket );
+
+            # Get channel specific fields.
+            if ( $Article{ArticleID} ) {
+                my %ArticleFields = $LayoutObject->ArticleFields(
+                    TicketID  => $TicketID,
+                    ArticleID => $Article{ArticleID},
                 );
+                FIELD:
+                for my $FieldKey (qw(Sender Subject)) {
+                    next FIELD if !defined $ArticleFields{$FieldKey}->{Value};
+                    $Article{$FieldKey} = $ArticleFields{$FieldKey}->{Realname} // $ArticleFields{$FieldKey}->{Value};
+                }
+            }
+
+            # Fallback for tickets without articles: get at least basic ticket data.
+            if ( !%Article ) {
+                %Article = %Ticket;
                 if ( !$Article{Title} ) {
                     $Article{Title} = $LayoutObject->{LanguageObject}->Translate(
                         'This ticket has no title or subject'
                     );
                 }
                 $Article{Subject} = $Article{Title};
-
-                # show ticket create time in small view
-                $Article{Created} = $Ticket{Created};
-            } else {
-                $Article{TicketID} = $Ticket{TicketID};
-                $Article{TicketNumber} = $Ticket{TicketNumber};
-                $Article{OwnerID} = $Ticket{OwnerID};
             }
 
-            # prepare a "long" version of the subject to show in the title attribute. We don't take
-            # the whole string (which could be VERY long) to avoid polluting the DOM and having too
-            # much data to be transferred on large ticket lists
-            $Article{SubjectLong} = $TicketObject->TicketSubjectClean(
-                TicketNumber => $Article{TicketNumber},
-                Subject      => $Article{Subject} || '',
-                Size         => 500,
-            );
-
-            # prepare subject
-            $Article{Subject} = $TicketObject->TicketSubjectClean(
-                TicketNumber => $Article{TicketNumber},
-                Subject      => $Article{Subject} || '',
-            );
+            # show ticket create time in small view
+            $Article{Created} = $Ticket{Created};
 
             # create human age
             $Article{Age} = $LayoutObject->CustomerAge(
@@ -595,6 +634,12 @@ sub Run {
         OriginalTicketIDs => $Param{OriginalTicketIDs},
     );
 
+    # send data to JS
+    $LayoutObject->AddJSData(
+        Key   => 'LinkPage',
+        Value => $Param{LinkPage},
+    );
+
     $LayoutObject->Block(
         Name => 'DocumentContent',
         Data => \%Param,
@@ -607,12 +652,14 @@ sub Run {
     my %SpecialColumns = (
         TicketNumber => 1,
         Owner        => 1,
+        Responsible  => 1,
         CustomerID   => 1,
-        Title        => 1,
     );
 
     # get dynamic field backend object
     my $DynamicFieldBackendObject = $Kernel::OM->Get('Kernel::System::DynamicField::Backend');
+
+    $Param{OrderBy} = $Param{OrderBy} || 'Up';
 
     my $TicketData = scalar @ArticleBox;
     if ($TicketData) {
@@ -638,23 +685,26 @@ sub Run {
                 Name => 'GeneralOverviewHeader',
             );
 
-            my $CSS = '';
-            my $OrderBy;
+            my $CSS     = '';
+            my $OrderBy = $Param{OrderBy};
             my $Link;
-            my $Title = $Item;
+            my $Title = $LayoutObject->{LanguageObject}->Translate($Item);
 
             if ( $Param{SortBy} && ( $Param{SortBy} eq $Item ) ) {
-                if ( $Param{OrderBy} && ( $Param{OrderBy} eq 'Up' ) ) {
-                    $OrderBy = 'Down';
+                my $TitleDesc;
+
+                # Change order for sorting column.
+                $OrderBy = $OrderBy eq 'Up' ? 'Down' : 'Up';
+
+                if ( $OrderBy eq 'Down' ) {
                     $CSS .= ' SortAscendingLarge';
+                    $TitleDesc = Translatable('sorted ascending');
                 }
                 else {
-                    $OrderBy = 'Up';
                     $CSS .= ' SortDescendingLarge';
+                    $TitleDesc = Translatable('sorted descending');
                 }
 
-                # set title description
-                my $TitleDesc = $OrderBy eq 'Down' ? 'sorted descending' : 'sorted ascending';
                 $TitleDesc = $LayoutObject->{LanguageObject}->Translate($TitleDesc);
                 $Title .= ', ' . $TitleDesc;
             }
@@ -662,7 +712,8 @@ sub Run {
             $LayoutObject->Block(
                 Name => 'OverviewNavBarPageFlag',
                 Data => {
-                    CSS => $CSS,
+                    CSS   => $CSS,
+                    Title => $Title,
                 },
             );
 
@@ -671,7 +722,7 @@ sub Run {
                     Name => 'OverviewNavBarPageFlagEmpty',
                     Data => {
                         Name => $Item,
-                        }
+                    }
                 );
             }
             else {
@@ -690,7 +741,6 @@ sub Run {
         }
 
         my $CSS = '';
-        my $OrderBy;
 
         # show special ticket columns, if needed
         COLUMN:
@@ -701,9 +751,10 @@ sub Run {
             );
 
             $CSS = $Column;
-            my $Title = $Column;
+            my $Title   = $LayoutObject->{LanguageObject}->Translate($Column);
+            my $OrderBy = $Param{OrderBy};
 
-            # ouput overal block so TicketNumber as well as other columns can be ordered
+            # output overall block so TicketNumber as well as other columns can be ordered
             $LayoutObject->Block(
                 Name => 'OverviewNavBarPageTicketHeader',
                 Data => {},
@@ -712,43 +763,35 @@ sub Run {
             if ( $SpecialColumns{$Column} ) {
 
                 if ( $Param{SortBy} && ( $Param{SortBy} eq $Column ) ) {
-                    if ( $Param{OrderBy} && ( $Param{OrderBy} eq 'Up' ) ) {
-                        $OrderBy = 'Down';
+                    my $TitleDesc;
+
+                    # Change order for sorting column.
+                    $OrderBy = $OrderBy eq 'Up' ? 'Down' : 'Up';
+
+                    if ( $OrderBy eq 'Down' ) {
                         $CSS .= ' SortAscendingLarge';
+                        $TitleDesc = Translatable('sorted ascending');
                     }
                     else {
-                        $OrderBy = 'Up';
                         $CSS .= ' SortDescendingLarge';
+                        $TitleDesc = Translatable('sorted descending');
                     }
 
-                    # add title description
-                    my $TitleDesc = $OrderBy eq 'Down' ? 'sorted ascending' : 'sorted descending';
                     $TitleDesc = $LayoutObject->{LanguageObject}->Translate($TitleDesc);
                     $Title .= ', ' . $TitleDesc;
                 }
 
                 # translate the column name to write it in the current language
                 my $TranslatedWord;
-
-                if ( $Column eq 'Title' ) {
-
-                    $TranslatedWord = $LayoutObject->{LanguageObject}->Translate('From') . ' / ';
-
-                    if ( $Self->{SmallViewColumnHeader} eq 'LastCustomerSubject' ) {
-                        $TranslatedWord
-                            .= $LayoutObject->{LanguageObject}->Translate('Subject');
-                    }
-                    elsif ( $Self->{SmallViewColumnHeader} eq 'TicketTitle' ) {
-                        $TranslatedWord
-                            .= $LayoutObject->{LanguageObject}->Translate('Title');
-                    }
+                if ( $Column eq 'CustomerID' ) {
+                    $TranslatedWord = $LayoutObject->{LanguageObject}->Translate('Customer ID');
                 }
                 else {
                     $TranslatedWord = $LayoutObject->{LanguageObject}->Translate($Column);
                 }
 
-                my $FilterTitle     = $Column;
-                my $FilterTitleDesc = 'filter not active';
+                my $FilterTitle     = $TranslatedWord;
+                my $FilterTitleDesc = Translatable('filter not active');
                 if (
                     $Self->{StoredFilters} &&
                     (
@@ -758,7 +801,7 @@ sub Run {
                     )
                 {
                     $CSS .= ' FilterActive';
-                    $FilterTitleDesc = 'filter active';
+                    $FilterTitleDesc = Translatable('filter active');
                 }
                 $FilterTitleDesc = $LayoutObject->{LanguageObject}->Translate($FilterTitleDesc);
                 $FilterTitle .= ', ' . $FilterTitleDesc;
@@ -785,7 +828,7 @@ sub Run {
                     )
                 {
                     my $Css;
-                    if ( $Column eq 'CustomerID' || $Column eq 'Owner' ) {
+                    if ( $Column eq 'CustomerID' || $Column eq 'Owner' || $Column eq 'Responsible' ) {
                         $Css .= ' Hidden';
                     }
 
@@ -817,31 +860,43 @@ sub Run {
                         $LayoutObject->Block(
                             Name =>
                                 'ContentLargeTicketGenericHeaderColumnFilterLinkCustomerIDSearch',
-                            Data => {
-                                minQueryLength      => 2,
-                                queryDelay          => 100,
-                                maxResultsDisplayed => 20,
+                            Data => {},
+                        );
+
+                        # send data to JS
+                        $LayoutObject->AddJSData(
+                            Key   => 'CustomerIDAutocomplete',
+                            Value => {
+                                'QueryDelay'          => 100,
+                                'MaxResultsDisplayed' => 20,
+                                'MinQueryLength'      => 2,
                             },
                         );
                     }
-                    elsif ( $Column eq 'Owner' ) {
+                    elsif ( $Column eq 'Owner' || $Column eq 'Responsible' ) {
 
                         $LayoutObject->Block(
                             Name => 'ContentLargeTicketGenericHeaderColumnFilterLinkUserSearch',
-                            Data => {
-                                minQueryLength      => 2,
-                                queryDelay          => 100,
-                                maxResultsDisplayed => 20,
+                            Data => {},
+                        );
+
+                        # send data to JS
+                        $LayoutObject->AddJSData(
+                            Key   => 'UserAutocomplete',
+                            Value => {
+                                'QueryDelay'          => 100,
+                                'MaxResultsDisplayed' => 20,
+                                'MinQueryLength'      => 2,
                             },
                         );
                     }
 
                 }
 
-                # verify if column is filterable and sortable
+                # verify if column is filterable
                 elsif ( $Self->{ValidFilterableColumns}->{$Column} ) {
 
-                    # variable to save the filter's html code
+                    # variable to save the filter's HTML code
                     my $ColumnFilterHTML = $Self->_InitialColumnFilter(
                         ColumnName    => $Column,
                         Label         => $Column,
@@ -895,17 +950,20 @@ sub Run {
             elsif ( $Column !~ m{\A DynamicField_}xms ) {
 
                 if ( $Param{SortBy} && ( $Param{SortBy} eq $Column ) ) {
-                    if ( $Param{OrderBy} && ( $Param{OrderBy} eq 'Up' ) ) {
-                        $OrderBy = 'Down';
+                    my $TitleDesc;
+
+                    # Change order for sorting column.
+                    $OrderBy = $OrderBy eq 'Up' ? 'Down' : 'Up';
+
+                    if ( $OrderBy eq 'Down' ) {
                         $CSS .= ' SortAscendingLarge';
+                        $TitleDesc = Translatable('sorted ascending');
                     }
                     else {
-                        $OrderBy = 'Up';
                         $CSS .= ' SortDescendingLarge';
+                        $TitleDesc = Translatable('sorted descending');
                     }
 
-                    # add title description
-                    my $TitleDesc = $OrderBy eq 'Down' ? 'sorted ascending' : 'sorted descending';
                     $TitleDesc = $LayoutObject->{LanguageObject}->Translate($TitleDesc);
                     $Title .= ', ' . $TitleDesc;
                 }
@@ -927,15 +985,24 @@ sub Run {
                 elsif ( $Column eq 'PendingTime' ) {
                     $TranslatedWord = $LayoutObject->{LanguageObject}->Translate('Pending till');
                 }
+                elsif ( $Column eq 'CustomerCompanyName' ) {
+                    $TranslatedWord = $LayoutObject->{LanguageObject}->Translate('Customer Name');
+                }
+                elsif ( $Column eq 'CustomerName' ) {
+                    $TranslatedWord = $LayoutObject->{LanguageObject}->Translate('Customer User Name');
+                }
+                elsif ( $Column eq 'CustomerUserID' ) {
+                    $TranslatedWord = $LayoutObject->{LanguageObject}->Translate('Customer User ID');
+                }
                 else {
                     $TranslatedWord = $LayoutObject->{LanguageObject}->Translate($Column);
                 }
 
-                my $FilterTitle     = $Column;
-                my $FilterTitleDesc = 'filter not active';
+                my $FilterTitle     = $TranslatedWord;
+                my $FilterTitleDesc = Translatable('filter not active');
                 if ( $Self->{StoredFilters} && $Self->{StoredFilters}->{ $Column . 'IDs' } ) {
                     $CSS .= ' FilterActive';
-                    $FilterTitleDesc = 'filter active';
+                    $FilterTitleDesc = Translatable('filter active');
                 }
                 $FilterTitleDesc = $LayoutObject->{LanguageObject}->Translate($FilterTitleDesc);
                 $FilterTitle .= ', ' . $FilterTitleDesc;
@@ -956,18 +1023,13 @@ sub Run {
                     && $Self->{ValidSortableColumns}->{$Column}
                     )
                 {
-                    my $Css;
-                    if ( $Column eq 'Responsible' ) {
-                        $Css .= ' Hidden';
-                    }
 
-                    # variable to save the filter's html code
+                    # variable to save the filter's HTML code
                     my $ColumnFilterHTML = $Self->_InitialColumnFilter(
                         ColumnName    => $Column,
                         Label         => $Column,
                         ColumnValues  => $ColumnValues->{$Column},
                         SelectedValue => $Param{GetColumnFilter}->{$Column} || '',
-                        Css           => $Css,
                     );
 
                     $LayoutObject->Block(
@@ -983,19 +1045,6 @@ sub Run {
                             FilterTitle          => $FilterTitle,
                         },
                     );
-
-                    if ( $Column eq 'Responsible' ) {
-
-                        $LayoutObject->Block(
-                            Name => 'ContentLargeTicketGenericHeaderColumnFilterLinkUserSearch',
-                            Data => {
-                                minQueryLength      => 2,
-                                queryDelay          => 100,
-                                maxResultsDisplayed => 20,
-                            },
-                        );
-                    }
-
                 }
 
                 # verify if column is just filterable
@@ -1006,7 +1055,7 @@ sub Run {
                         $Css = 'Hidden';
                     }
 
-                    # variable to save the filter's html code
+                    # variable to save the filter's HTML code
                     my $ColumnFilterHTML = $Self->_InitialColumnFilter(
                         ColumnName    => $Column,
                         Label         => $Column,
@@ -1032,10 +1081,16 @@ sub Run {
                         $LayoutObject->Block(
                             Name =>
                                 'ContentLargeTicketGenericHeaderColumnFilterLinkCustomerUserSearch',
-                            Data => {
-                                minQueryLength      => 2,
-                                queryDelay          => 100,
-                                maxResultsDisplayed => 20,
+                            Data => {},
+                        );
+
+                        # send data to JS
+                        $LayoutObject->AddJSData(
+                            Key   => 'CustomerUserAutocomplete',
+                            Value => {
+                                'QueryDelay'          => 100,
+                                'MaxResultsDisplayed' => 20,
+                                'MinQueryLength'      => 2,
                             },
                         );
                     }
@@ -1097,31 +1152,33 @@ sub Run {
 
                 if ($IsSortable) {
                     my $CSS = 'DynamicField_' . $DynamicFieldConfig->{Name};
-                    my $OrderBy;
                     if (
                         $Param{SortBy}
                         && ( $Param{SortBy} eq ( 'DynamicField_' . $DynamicFieldConfig->{Name} ) )
                         )
                     {
-                        if ( $Param{OrderBy} && ( $Param{OrderBy} eq 'Up' ) ) {
-                            $OrderBy = 'Down';
+                        my $TitleDesc;
+
+                        # Change order for sorting column.
+                        $OrderBy = $OrderBy eq 'Up' ? 'Down' : 'Up';
+
+                        if ( $OrderBy eq 'Down' ) {
                             $CSS .= ' SortAscendingLarge';
+                            $TitleDesc = Translatable('sorted ascending');
                         }
                         else {
-                            $OrderBy = 'Up';
                             $CSS .= ' SortDescendingLarge';
+                            $TitleDesc = Translatable('sorted descending');
                         }
 
-                        # add title description
-                        my $TitleDesc = $OrderBy eq 'Down' ? 'sorted ascending' : 'sorted descending';
                         $TitleDesc = $LayoutObject->{LanguageObject}->Translate($TitleDesc);
                         $Title .= ', ' . $TitleDesc;
                     }
 
-                    my $FilterTitleDesc = 'filter not active';
+                    my $FilterTitleDesc = Translatable('filter not active');
                     if ( $Self->{StoredFilters} && $Self->{StoredFilters}->{$Column} ) {
                         $CSS .= ' FilterActive';
-                        $FilterTitleDesc = 'filter active';
+                        $FilterTitleDesc = Translatable('filter active');
                     }
                     $FilterTitleDesc = $LayoutObject->{LanguageObject}->Translate($FilterTitleDesc);
                     $FilterTitle .= ', ' . $FilterTitleDesc;
@@ -1138,7 +1195,7 @@ sub Run {
 
                     if ( $Self->{ValidFilterableColumns}->{$DynamicFieldName} ) {
 
-                        # variable to save the filter's html code
+                        # variable to save the filter's HTML code
                         my $ColumnFilterHTML = $Self->_InitialColumnFilter(
                             ColumnName    => $DynamicFieldName,
                             Label         => $Label,
@@ -1154,7 +1211,6 @@ sub Run {
                                 Label            => $Label,
                                 DynamicFieldName => $DynamicFieldConfig->{Name},
                                 ColumnFilterStrg => $ColumnFilterHTML,
-                                OrderBy          => $OrderBy,
                                 Title            => $Title,
                                 FilterTitle      => $FilterTitle,
                             },
@@ -1185,7 +1241,7 @@ sub Run {
 
                     if ( $Self->{ValidFilterableColumns}->{$DynamicFieldName} ) {
 
-                        # variable to save the filter's html code
+                        # variable to save the filter's HTML code
                         my $ColumnFilterHTML = $Self->_InitialColumnFilter(
                             ColumnName    => $DynamicFieldName,
                             Label         => $Label,
@@ -1203,7 +1259,6 @@ sub Run {
                                 Label            => $Label,
                                 DynamicFieldName => $DynamicFieldConfig->{Name},
                                 ColumnFilterStrg => $ColumnFilterHTML,
-                                OrderBy          => $OrderBy,
                                 Title            => $Title,
                             },
                         );
@@ -1238,7 +1293,7 @@ sub Run {
 
                     if ( $Self->{ValidFilterableColumns}->{$DynamicFieldName} ) {
 
-                        # variable to save the filter's html code
+                        # variable to save the filter's HTML code
                         my $ColumnFilterHTML = $Self->_InitialColumnFilter(
                             ColumnName    => $DynamicFieldName,
                             Label         => $Label,
@@ -1279,7 +1334,7 @@ sub Run {
 
                     if ( $Self->{ValidFilterableColumns}->{$DynamicFieldName} ) {
 
-                        # variable to save the filter's html code
+                        # variable to save the filter's HTML code
                         my $ColumnFilterHTML = $Self->_InitialColumnFilter(
                             ColumnName    => $DynamicFieldName,
                             Label         => $Label,
@@ -1325,6 +1380,8 @@ sub Run {
         $LayoutObject->Block( Name => 'NoTicketFound' );
     }
 
+    my %ActionRowTickets;
+
     for my $ArticleRef (@ArticleBox) {
 
         # get last customer article
@@ -1332,13 +1389,15 @@ sub Run {
 
         # escalation human times
         if ( $Article{EscalationTime} ) {
-            $Article{EscalationTimeHuman} = $LayoutObject->CustomerAgeInHours(
-                Age   => $Article{EscalationTime},
-                Space => ' ',
+            $Article{EscalationTimeHuman} = $LayoutObject->CustomerAge(
+                Age                => $Article{EscalationTime},
+                TimeShowAlwaysLong => 1,
+                Space              => ' ',
             );
-            $Article{EscalationTimeWorkingTime} = $LayoutObject->CustomerAgeInHours(
-                Age   => $Article{EscalationTimeWorkingTime},
-                Space => ' ',
+            $Article{EscalationTimeWorkingTime} = $LayoutObject->CustomerAge(
+                Age                => $Article{EscalationTimeWorkingTime},
+                TimeShowAlwaysLong => 1,
+                Space              => ' ',
             );
         }
 
@@ -1369,33 +1428,50 @@ sub Run {
 
         # get user object
         my $UserObject = $Kernel::OM->Get('Kernel::System::User');
-        my $ArticleObject = $Kernel::OM->Get('Kernel::System::Ticket::Article');
 
         # user info
         my %UserInfo = $UserObject->GetUserData(
             UserID => $Article{OwnerID},
         );
-	##Recupera o primeiro Artigo do chamado
-	#
-       	#my %ArticleFirst = $Kernel::OM->Get("Kernel::System::Ticket")->ArticleFirstArticle(
-	#        TicketID      => $Article{TicketID},
-	#        DynamicFields => 0,     # 0 or 1, see ArticleGet()
-    	#);
 
-        my @arrArticle = $ArticleObject->ArticleList( TicketID => $Article{TicketID}, OnlyFirst => 1 );
-        my %ArticleFirst = (scalar @arrArticle) ? $ArticleObject->BackendForArticle(%{$arrArticle[0]})->ArticleGet(%{$arrArticle[0]}) : {};
+        # Responsible info.
+        my %ResponsibleInfo = $UserObject->GetUserData(
+            UserID => $Article{ResponsibleID},
+        );
+        $UserInfo{ResponsibleInfo} = \%ResponsibleInfo;
 
-	my %ArticleSecond;
-        my @ArticleIDs = $ArticleObject->ArticleList( TicketID => $Article{TicketID}, SenderType => 'agent' );
-        @ArticleIDs = grep { $_{ArticleID} eq $ArticleFirst{ArticleID} } @ArticleIDs;
-        if(@ArticleIDs) {
-           %ArticleSecond = $ArticleObject->BackendForArticle(%{$ArticleIDs[-1]})->ArticleGet(%{$ArticleIDs[-1]});
+        # COMPLEMENTO - Ger first ticket article
+        my @ArticleIDs = $ArticleObject->ArticleList(
+            TicketID   => $Article{TicketID},
+            OnlyFirst  => 1,
+        );
+        my %ArticleFirst;
+        if(@ArticleIDs){
+            %ArticleFirst = $ArticleObject->BackendForArticle( %{$ArticleIDs[0]} )->ArticleGet(
+                %{$ArticleIDs[0]},
+                DynamicFields => 0,
+            );
         }
 
-	$Article{FirstArticle} =  \%ArticleFirst;
-	$Article{SecondArticle} = \%ArticleSecond;
-	#
-	#<---------------------------------------->#	
+        # Get last agent article.
+        @ArticleIDs = $ArticleObject->ArticleList(
+            TicketID   => $Article{TicketID},
+            SenderType => 'agent',
+            OnlyLast   => 1,
+        );
+
+        my %ArticleSecond;
+        delete $ArticleIDs[0] if( $ArticleIDs[0]->{ArticleID} eq $ArticleFirst{ArticleID});
+        if(@ArticleIDs && $ArticleIDs[0] && $ArticleIDs[0]->{TicketID}){
+            %ArticleSecond = $ArticleObject->BackendForArticle( %{$ArticleIDs[0]} )->ArticleGet(
+                %{$ArticleIDs[0]},
+                DynamicFields => 0,
+            );
+        };
+        $Article{FirstArticle} =  \%ArticleFirst;
+        $Article{SecondArticle} = \%ArticleSecond;
+        # EO COMPLEMENTO
+
         $LayoutObject->Block(
             Name => 'Record',
             Data => { %Article, %UserInfo },
@@ -1407,7 +1483,7 @@ sub Run {
                 Name => 'GeneralOverviewRow',
             );
             $LayoutObject->Block(
-                Name => 'Bulk',
+                Name => Translatable('Bulk'),
                 Data => { %Article, %UserInfo },
             );
         }
@@ -1448,28 +1524,24 @@ sub Run {
                 );
 
                 if ( $SpecialColumns{$TicketColumn} ) {
-                    if ( $TicketColumn eq 'Title' ) {
+                    $LayoutObject->Block(
+                        Name => 'Record' . $TicketColumn,
+                        Data => { %Article, %UserInfo },
+                    );
 
-                        # check if last customer subject or ticket title should be shown
-                        if ( $Self->{SmallViewColumnHeader} eq 'LastCustomerSubject' ) {
-                            $LayoutObject->Block(
-                                Name => 'RecordLastCustomerSubject',
-                                Data => { %Article, %UserInfo },
-                            );
-                        }
-                        elsif ( $Self->{SmallViewColumnHeader} eq 'TicketTitle' ) {
-                            $LayoutObject->Block(
-                                Name => 'RecordTicketTitle',
-                                Data => { %Article, %UserInfo },
-                            );
-                        }
-                    }
-                    else {
-                        $LayoutObject->Block(
-                            Name => 'Record' . $TicketColumn,
-                            Data => { %Article, %UserInfo },
-                        );
-                    }
+                    next TICKETCOLUMN;
+                }
+
+                if ( $TicketColumn eq 'CreatedBy' ) {
+
+                    my %TicketCreatedByInfo = $UserObject->GetUserData(
+                        UserID => $Article{CreateBy},
+                    );
+
+                    $LayoutObject->Block(
+                        Name => 'RecordTicketCreatedBy',
+                        Data => \%TicketCreatedByInfo,
+                    );
                     next TICKETCOLUMN;
                 }
 
@@ -1479,13 +1551,15 @@ sub Run {
                     $EscalationData{EscalationTime}            = $Article{EscalationTime};
                     $EscalationData{EscalationDestinationDate} = $Article{EscalationDestinationDate};
 
-                    $EscalationData{EscalationTimeHuman} = $LayoutObject->CustomerAgeInHours(
-                        Age   => $EscalationData{EscalationTime},
-                        Space => ' ',
-                    );
-                    $EscalationData{EscalationTimeWorkingTime} = $LayoutObject->CustomerAgeInHours(
-                        Age   => $EscalationData{EscalationTimeWorkingTime},
-                        Space => ' ',
+                    $EscalationData{EscalationTimeHuman} = $LayoutObject->CustomerAge(
+                        Age                => $EscalationData{EscalationTime},
+                        TimeShowAlwaysLong => 1,
+                        Space              => ' ',
+                    ) || '-';
+                    $EscalationData{EscalationTimeWorkingTime} = $LayoutObject->CustomerAge(
+                        Age                => $EscalationData{EscalationTimeWorkingTime},
+                        TimeShowAlwaysLong => 1,
+                        Space              => ' ',
                     );
                     if (
                         defined $Article{EscalationTime}
@@ -1505,9 +1579,10 @@ sub Run {
                 my $CSSClass  = '';
                 if ( $TicketColumn eq 'EscalationSolutionTime' ) {
                     $BlockType = 'Escalation';
-                    $DataValue = $LayoutObject->CustomerAgeInHours(
-                        Age => $Article{SolutionTime} || 0,
-                        Space => ' ',
+                    $DataValue = $LayoutObject->CustomerAge(
+                        Age                => $Article{SolutionTime} || 0,
+                        TimeShowAlwaysLong => 1,
+                        Space              => ' ',
                     );
                     if ( defined $Article{SolutionTime} && $Article{SolutionTime} < 60 * 60 * 1 ) {
                         $CSSClass = 'Warning';
@@ -1515,9 +1590,10 @@ sub Run {
                 }
                 elsif ( $TicketColumn eq 'EscalationResponseTime' ) {
                     $BlockType = 'Escalation';
-                    $DataValue = $LayoutObject->CustomerAgeInHours(
-                        Age => $Article{FirstResponseTime} || 0,
-                        Space => ' ',
+                    $DataValue = $LayoutObject->CustomerAge(
+                        Age                => $Article{FirstResponseTime} || 0,
+                        TimeShowAlwaysLong => 1,
+                        Space              => ' ',
                     );
                     if (
                         defined $Article{FirstResponseTime}
@@ -1529,9 +1605,10 @@ sub Run {
                 }
                 elsif ( $TicketColumn eq 'EscalationUpdateTime' ) {
                     $BlockType = 'Escalation';
-                    $DataValue = $LayoutObject->CustomerAgeInHours(
-                        Age => $Article{UpdateTime} || 0,
-                        Space => ' ',
+                    $DataValue = $LayoutObject->CustomerAge(
+                        Age                => $Article{UpdateTime} || 0,
+                        TimeShowAlwaysLong => 1,
+                        Space              => ' ',
                     );
                     if ( defined $Article{UpdateTime} && $Article{UpdateTime} < 60 * 60 * 1 ) {
                         $CSSClass = 'Warning';
@@ -1562,12 +1639,11 @@ sub Run {
                 }
                 elsif ( $TicketColumn eq 'Responsible' ) {
 
-                    # get responsible info
                     my %ResponsibleInfo = $UserObject->GetUserData(
                         UserID => $Article{ResponsibleID},
                     );
-                    $DataValue = $ResponsibleInfo{'UserFirstname'} . ' '
-                        . $ResponsibleInfo{'UserLastname'};
+
+                    $DataValue = $ResponsibleInfo{'UserFullname'};
                 }
                 else {
                     $DataValue = $Article{$TicketColumn}
@@ -1578,7 +1654,7 @@ sub Run {
                 $LayoutObject->Block(
                     Name => "RecordTicketColumn$BlockType",
                     Data => {
-                        GenericValue => $DataValue || '',
+                        GenericValue => $DataValue || '-',
                         Class        => $CSSClass  || '',
                     },
                 );
@@ -1679,24 +1755,28 @@ sub Run {
         # add action items as js
         if ( $Article{ActionItems} ) {
 
-            $LayoutObject->Block(
-                Name => 'DocumentReadyActionRowAdd',
-                Data => {
-                    TicketID => $Article{TicketID},
-                    Data     => $Article{ActionItems},
-                },
-            );
+            # replace TT directives from string with values
+            for my $ActionItem ( @{ $Article{ActionItems} } ) {
+                $ActionItem->{Link} = $LayoutObject->Output(
+                    Template => $ActionItem->{Link},
+                    Data     => {
+                        TicketID => $Article{TicketID},
+                    },
+                );
+            }
+
+            $ActionRowTickets{ $Article{TicketID} } = $LayoutObject->JSONEncode( Data => $Article{ActionItems} );
         }
     }
 
-    # init for table control
-    $LayoutObject->Block(
-        Name => 'DocumentReadyStart',
-        Data => \%Param,
+    # send data to JS
+    $LayoutObject->AddJSData(
+        Key   => 'ActionRowTickets',
+        Value => \%ActionRowTickets,
     );
 
     # set column filter form, to correctly fill the column filters is necessary to pass each
-    #    overview some information in the AJAX call, for examle the fixed Filters or NavBarFilters
+    #    overview some information in the AJAX call, for example the fixed Filters or NavBarFilters
     #    and also other values like the Queue in AgentTicketQueue, otherwise the filters will be
     #    filled with default restrictions, resulting in more options than the ones that the
     #    available tickets should provide, see Bug#9902
@@ -1892,7 +1972,7 @@ sub FilterContent {
         }
     }
 
-    # variable to save the filter's html code
+    # variable to save the filter's HTML code
     my $ColumnFilterJSON = $Self->_ColumnFilterJSON(
         ColumnName    => $HeaderColumn,
         Label         => $LabelColumn,
@@ -1903,23 +1983,21 @@ sub FilterContent {
     return $ColumnFilterJSON;
 }
 
-=over
+# =head2 _ColumnFilterJSON()
 
-=item _ColumnFilterJSON()
+#     creates a JSON select filter for column header
 
-    creates a JSON select filter for column header
+#     my $ColumnFilterJSON = $TicketOverviewSmallObject->_ColumnFilterJSON(
+#         ColumnName => 'Queue',
+#         Label      => 'Queue',
+#         ColumnValues => {
+#             1 => 'PostMaster',
+#             2 => 'Junk',
+#         },
+#         SelectedValue '1',
+#     );
 
-    my $ColumnFilterJSON = $TicketOverviewSmallObject->_ColumnFilterJSON(
-        ColumnName => 'Queue',
-        Label      => 'Queue',
-        ColumnValues => {
-            1 => 'PostMaster',
-            2 => 'Junk',
-        },
-        SelectedValue '1',
-    );
-
-=cut
+# =cut
 
 sub _ColumnFilterJSON {
     my ( $Self, %Param ) = @_;
@@ -1960,7 +2038,7 @@ sub _ColumnFilterJSON {
         for my $ValueKey ( sort { lc $Values{$a} cmp lc $Values{$b} } keys %Values ) {
             push @{$Data}, {
                 Key   => $ValueKey,
-                Value => $Values{$ValueKey}
+                Value => $Values{$ValueKey},
             };
         }
     }
@@ -2007,7 +2085,9 @@ sub _DefaultColumnSort {
         EscalationSolutionTime => 114,
         EscalationResponseTime => 115,
         EscalationUpdateTime   => 116,
-        Title                  => 120,
+        Sender                 => 120,
+        Title                  => 122,
+        Subject                => 124,
         State                  => 130,
         Lock                   => 140,
         Queue                  => 150,
@@ -2043,5 +2123,3 @@ sub _DefaultColumnSort {
 }
 
 1;
-
-=back
