@@ -1461,7 +1461,7 @@ sub Run {
         );
 
         my %ArticleSecond;
-        delete $ArticleIDs[0] if( $ArticleIDs[0]->{ArticleID} eq $ArticleFirst{ArticleID});
+        delete $ArticleIDs[0] if( exists $ArticleIDs[0]->{ArticleID} and $ArticleIDs[0]->{ArticleID} eq $ArticleFirst{ArticleID} );
         if(@ArticleIDs && $ArticleIDs[0] && $ArticleIDs[0]->{TicketID}){
             %ArticleSecond = $ArticleObject->BackendForArticle( %{$ArticleIDs[0]} )->ArticleGet(
                 %{$ArticleIDs[0]},
